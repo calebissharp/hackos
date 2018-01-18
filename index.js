@@ -10,7 +10,7 @@ const host = process.env.HOST || '0.0.0.0'
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' })
 
-const pubKey = ssh2.utils.genPublicKey(ssh2.utils.parseKey(fs.readFileSync('keys/user.pub')));
+const pubKey = ssh2.utils.genPublicKey(ssh2.utils.parseKey(fs.readFileSync('keys/user.pub')))
 
 const users = {}
 
