@@ -8,7 +8,8 @@
     "dev": "nodemon ."
   },
   "dependencies": {
-    "dockerode": "^2.5.3"
+    "dockerode": "^2.5.3",
+    "ssh2": "^0.5.5"
   },
   "devDependencies": {
     "nodemon": "^1.14.11"
