@@ -1,10 +1,14 @@
 const net = require('net')
-const Docker = require('dockerode');
+const Docker = require('dockerode')
 
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+const port = process.env.PORT || 8080
+const host = process.env.HOST || '0.0.0.0'
+
+const docker = new Docker({ socketPath: '/var/run/docker.sock' })
 
 const server = net.createServer(socket => {
   socket.write('[server] Connecting...\n')
+
   docker.createContainer({
     Image: 'ubuntu',
     AttachStdin: true,
@@ -17,43 +21,39 @@ const server = net.createServer(socket => {
     Priveleged: false,
   })
     .then(container => {
-      console.log('running container...')
-      return container.start();
+      console.log('Starting container...')
+      return container.start()
     })
     .then(container => {
-      console.log('attaching container...')
+      console.log('Attaching container...')
       container.exec({
-        Cmd: ["bash"],
+        Cmd: ['bash'],
         'AttachStdout': true,
         'AttachStderr': true,
         'AttachStdin': true,
         'Tty': true
-      }, (err, exec) => {
-        if (err) {
-          console.log('error', err)
-        }
-        exec.start({ stdin: true }, (err, stream) => {
-          console.log(`piping container... (${container.id})`)
-          if (err) {
-            console.log(err)
-          }
-          socket.write('[server] Remember, if you disconnect, all your data will be lost!\n\n')
-          stream.pipe(socket)
+      })
+        .then(exec => {
+          return exec.start({ stdin: true }, (err, stream) => {
+            console.log(`Piping socket to container... (${container.id})`)
+            socket.write('[server] Remember, if you disconnect, all your data will be lost!\n\n')
+            stream.pipe(socket)
 
-          socket.on('data', data => {
-            stream.write(data)
-          })
+            socket.on('data', data => {
+              stream.write(data)
+            })
 
-          socket.on('close', () => {
-            container.stop()
-              .then(c => c.remove())
+            socket.on('close', () => {
+              container.stop()
+                .then(c => c.remove())
+            })
           })
         })
-      })
+        .catch(error => socket.write('[server] Error connecting to container.\n' + error + '\n'))
     })
     .catch(console.error)
 })
 
-server.listen(8000, () => {
-  console.log('Server listening...')
+server.listen(port, host, () => {
+  console.log(`Server listening on ${host}:${port}`)
 })
