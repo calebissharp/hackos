@@ -15,24 +15,28 @@ const pubKey = ssh2.utils.genPublicKey(ssh2.utils.parseKey(fs.readFileSync('keys
 const users = {}
 
 const getOrCreateContainer = async (user) => {
-  if (user.containerID) {
-    return docker.getContainer(user.containerID)
-  } else {
-    const container = await docker.createContainer({
-      Image: 'ubuntu',
-      AttachStdin: true,
-      AttachStdout: true,
-      AttachStderr: true,
-      Tty: true,
-      Cmd: ['/bin/bash'],
-      OpenStdin: false,
-      StdinOnce: false,
-      Priveleged: false,
-    })
-
-    user.containerID = container.id
-
-    return container
+  try {
+    if (user.containerID) {
+      docker.getContainer(`hackos-${user.containerID}`)
+    } else {
+      const container = await docker.createContainer({
+        Image: 'ubuntu',
+        AttachStdin: true,
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty: true,
+        Cmd: ['/bin/bash'],
+        OpenStdin: false,
+        StdinOnce: false,
+        Privileged: false,
+      })
+  
+      user.containerID = container.id
+  
+      return container
+    }
+  } catch(error) {
+    console.log(error)
   }
 }
 
@@ -41,26 +45,30 @@ const attachToContainer = async ({ container, socket, client, user }) => {
     const exec = await container.exec({
       Cmd: ['bash'],
       'AttachStdout': true,
-      'AttachStderr': false,
+      'AttachStderr': true,
       'AttachStdin': true,
       'Tty': true
     })
-    exec.start({ stdin: true }, (err, stream) => {
+    exec.start({ stdin: true, hijack: true }, (err, stream) => {
       console.log(`Piping socket to container... (${container.id})`)
-      socket.write(`[server] Welcome ${user.username}\n\n`)
-      stream.pipe(socket)
+
+      socket.write(`[server] Welcome ${user.username}\r\n\r\n`)
+      docker.modem.demuxStream(stream, socket, socket)
   
-      socket.on('data', data => {
-        stream.write(data)
+      socket.pipe(stream)
+  
+      stream.on('end', () => {
+        socket.write(`\r\n[server] Goodbye for now ${user.username}.\r\n\r\n`)
+        client.end()
+        container.stop()
       })
-  
       client.on('end', () => {
         container.stop()
         // .then(c => c.remove())
       })
     })
   } catch(error) {
-    socket.write('[server] Error connecting to container.\n' + error + '\n')
+    socket.write('[server] Error connecting to container.\r\n' + error + '\r\n')
   }
 }
 
@@ -104,10 +112,11 @@ new ssh2.Server({
       client.on('session', (accept, reject) => {
         const session = accept()
 
-        session.on('shell', async (accept, reject) => {
+        session
+        .on('shell', async (accept, reject) => {
           const socket = accept()
 
-          socket.write('[server] Connecting...\n')
+          socket.write('[server] Connecting...\r\n')
 
           const container = await getOrCreateContainer(user)
 
@@ -116,6 +125,11 @@ new ssh2.Server({
 
           console.log('Attaching container...')
           await attachToContainer({ container, socket, client, user })
+        })
+        .on('pty', async (accept, reject, info) => {
+          const x = accept()
+
+
         })
       })
     })
