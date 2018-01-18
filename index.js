@@ -134,6 +134,6 @@ new ssh2.Server({
       })
     })
 })
-  .listen(8081, '0.0.0.0', () => {
-    console.log(`SSH server listening on 0.0.0.0:8081`)
+  .listen(port, host, () => {
+    console.log(`SSH server listening on ${host}:${port}`)
   })
