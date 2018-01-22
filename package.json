@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "node .",
-    "dev": "nodemon ."
+    "dev": "nodemon .",
+    "build:docker": "docker build -t hackos hackos"
   },
   "dependencies": {
     "dockerode": "^2.5.3",
