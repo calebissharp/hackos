@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+import argparse
+import time
+from tabulate import tabulate
+
+hosts = {
+    '17.231.2.15': [
+        ['80', 'open', 'http'],
+        ['22', 'open', 'ssh']
+    ]
+}
+
+def main():
+    parser = argparse.ArgumentParser(description='Connect to another machine')
+    parser.add_argument('host', type=str, help='Hostname to connect to')
+
+    args = parser.parse_args()
+
+    if args.host:
+        print('Connecting to {}...'.format(args.host))
+        time.sleep(1)
+        if args.host in hosts:
+            print('Connected!')
+            print('Running port scan...')
+            print('')
+            time.sleep(1)
+            headers_list = ['PORT', 'STATE', 'SERVICE']
+            print(tabulate(hosts[args.host], headers=['PORT', 'STATE', 'SERVICE'], tablefmt='plain'))
+            print('')
+            print('Scan complete.')
+        else:
+            print('Error: Could not create connection to {}.'.format(args.host))
+
+
+if __name__ == '__main__':
+    main()
