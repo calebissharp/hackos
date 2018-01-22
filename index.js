@@ -11,6 +11,7 @@ const host = process.env.HOST || '0.0.0.0'
 const docker = new Docker({ socketPath: '/var/run/docker.sock' })
 
 const pubKey = ssh2.utils.genPublicKey(ssh2.utils.parseKey(fs.readFileSync('keys/user.pub')))
+const intro = fs.readFileSync('introduction.txt', { encoding: 'utf8' })
 
 const users = {}
 
@@ -20,7 +21,7 @@ const getOrCreateContainer = async (user) => {
       docker.getContainer(`hackos-${user.containerID}`)
     } else {
       const container = await docker.createContainer({
-        Image: 'ubuntu',
+        Image: 'hackos',
         AttachStdin: true,
         AttachStdout: true,
         AttachStderr: true,
@@ -53,6 +54,9 @@ const attachToContainer = async ({ container, socket, client, user }) => {
       console.log(`Piping socket to container... (${container.id})`)
 
       socket.write(`[server] Welcome ${user.username}\r\n\r\n`)
+
+      socket.write(intro.replace(/\n/g, '\r\n') + '\r\n\r\n')
+
       docker.modem.demuxStream(stream, socket, socket)
   
       socket.pipe(stream)
