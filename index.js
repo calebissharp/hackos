@@ -31,9 +31,9 @@ const getOrCreateContainer = async (user) => {
         StdinOnce: false,
         Privileged: false,
       })
-  
+
       user.containerID = container.id
-  
+
       return container
     }
   } catch(error) {
@@ -58,9 +58,9 @@ const attachToContainer = async ({ container, socket, client, user }) => {
       socket.write(intro.replace(/\n/g, '\r\n') + '\r\n\r\n')
 
       docker.modem.demuxStream(stream, socket, socket)
-  
+
       socket.pipe(stream)
-  
+
       stream.on('end', () => {
         socket.write(`\r\n[server] Goodbye for now ${user.username}.\r\n\r\n`)
         client.end()
@@ -125,7 +125,7 @@ new ssh2.Server({
           const container = await getOrCreateContainer(user)
 
           console.log('Starting container...')
-          container.start()
+          await container.start()
 
           console.log('Attaching container...')
           await attachToContainer({ container, socket, client, user })
