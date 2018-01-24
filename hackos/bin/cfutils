@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+import argparse
+import time
+import sys
+from tabulate import tabulate
+
+hosts = {
+    '17.231.2.15': [
+        ['80', 'open', 'http'],
+        ['22', 'open', 'ssh']
+    ]
+}
+
+def httpcrack():
+    pass
+
+def pscan(host):
+    if host:
+        print('Connecting to {}...'.format(host))
+        time.sleep(1)
+        if host in hosts:
+            print('Connected!')
+            print('Running port scan...')
+            print('')
+            time.sleep(1)
+            headers_list = ['PORT', 'STATE', 'SERVICE']
+            print(tabulate(hosts[host], headers=['PORT', 'STATE', 'SERVICE'], tablefmt='plain'))
+            print('')
+            print('Scan complete.')
+        else:
+            print('Error: Could not create connection to {}.'.format(host))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='subparser')
+
+    parser_pscan = subparsers.add_parser('pscan', description='Connect to another machine')
+    parser_pscan.add_argument('host', type=str, help='Hostname to connect to')
+
+    parser_httpcrack = subparsers.add_parser('httpcrack')
+    parser_httpcrack.add_argument(
+        '-b', '--beta', dest='beta', help='Beta description')
+    parser_httpcrack.add_argument(
+        '-g', '--gamma', dest='gamma', default=42, help='Gamma description')
+
+    try:
+        kwargs = vars(parser.parse_args())
+        globals()[kwargs.pop('subparser')](**kwargs)
+    except KeyError:
+        parser.print_help()
+
+if __name__ == '__main__':
+    main()
