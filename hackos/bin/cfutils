@@ -5,44 +5,83 @@ import sys
 from tabulate import tabulate
 
 hosts = {
-    '17.231.2.15': [
-        ['80', 'open', 'http'],
-        ['22', 'open', 'ssh']
-    ]
+    '17.231.2.15': {
+        'ports': {
+            '80': {
+                'number': '80',
+                'state': 'open',
+                'service': 'http',
+                'log': '[15:23:23/12/10/2017] 52.31.122.2 connected.',
+            },
+            '22': {
+                'number': '22',
+                'state': 'closed',
+                'service': 'ssh',
+            },
+        },
+    },
+    '52.31.122.2': {
+        'ports': {
+            '443': {
+                'number': '443',
+                'state': 'closed',
+                'service': 'https',
+            },
+        },
+    },
 }
 
-def httpcrack():
-    pass
-
-def pscan(host):
-    if host:
-        print('Connecting to {}...'.format(host))
+def httpcrack(hostname, port):
+    host = hosts[hostname]
+    print('Connecting to {}:{}...'.format(hostname, port))
+    time.sleep(1)
+    if host and host['ports']['80']:
+        print('Connection established.')
+        time.sleep(0.5)
+        print('Waiting for handshake...')
+        time.sleep(0.5)
+        print('Decrypting hash...')
+        time.sleep(0.5)
+        print('Elevating authorization level...')
+        time.sleep(0.5)
+        print('Navigating filesystem...')
         time.sleep(1)
-        if host in hosts:
+        print('Reading server.log:')
+        time.sleep(0.5)
+        print('')
+        print(host['ports']['80']['log'])
+        print('')
+    else:
+        print('Error establishing connection.')
+
+def pscan(hostname):
+    if hostname:
+        print('Connecting to {}...'.format(hostname))
+        time.sleep(1)
+        if hostname in hosts:
             print('Connected!')
             print('Running port scan...')
             print('')
             time.sleep(1)
             headers_list = ['PORT', 'STATE', 'SERVICE']
-            print(tabulate(hosts[host], headers=['PORT', 'STATE', 'SERVICE'], tablefmt='plain'))
+            data = [ [d['number'], d['state'], d['service']] for d in [port[1] for port in hosts[hostname]['ports'].items()] ]
+            print(tabulate(data, headers=['PORT', 'STATE', 'SERVICE'], tablefmt='plain'))
             print('')
             print('Scan complete.')
         else:
-            print('Error: Could not create connection to {}.'.format(host))
+            print('Error: Could not create connection to {}.'.format(hostname))
 
 
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest='subparser')
 
-    parser_pscan = subparsers.add_parser('pscan', description='Connect to another machine')
-    parser_pscan.add_argument('host', type=str, help='Hostname to connect to')
+    parser_pscan = subparsers.add_parser('pscan', description='connect to another machine')
+    parser_pscan.add_argument('hostname', type=str, help='hostname to connect to')
 
     parser_httpcrack = subparsers.add_parser('httpcrack')
-    parser_httpcrack.add_argument(
-        '-b', '--beta', dest='beta', help='Beta description')
-    parser_httpcrack.add_argument(
-        '-g', '--gamma', dest='gamma', default=42, help='Gamma description')
+    parser_httpcrack.add_argument('hostname', type=str, help='host to crack')
+    parser_httpcrack.add_argument('-p', '--port', default=80, help='port that http server is running on')
 
     try:
         kwargs = vars(parser.parse_args())
