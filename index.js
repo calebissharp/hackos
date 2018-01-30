@@ -77,26 +77,6 @@ const attachToContainer = async ({ container, socket, client, user }) => {
 }
 
 const authenticateUser = client => ctx => {
-  if (ctx.method === 'keyboard-interactive') {
-    ctx.prompt(['Username:', 'Password:'], (username, password) => {
-      // account already exists
-      if (users[username] && users[username].password === password) {
-        client.username = username
-        return ctx.accept()
-      }
-      // account doesn't exist yet
-      else if (!users[username]) {
-        users[username] = {
-          username,
-          password,
-        }
-        client.username = username
-        return ctx.accept()
-      }
-      // they did something really wrong
-      return ctx.reject()
-    })
-  }
   if (ctx.method === 'password') {
     const { username, password } = ctx
     // account already exists
@@ -116,7 +96,7 @@ const authenticateUser = client => ctx => {
     // they did something really wrong
     return ctx.reject()
   } else {
-    ctx.reject()
+    client._sshstream.authFailure(['password'])
   }
 }
 
