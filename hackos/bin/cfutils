@@ -5,7 +5,7 @@ import sys
 import yaml
 from tabulate import tabulate
 
-hosts_file = open('/bin/hackos/cfutils.yml', 'r')
+hosts_file = open('/etc/hackos/cfutils.yml', 'r')
 hosts = yaml.safe_load(hosts_file)
 
 def httpcrack(hostname, port):
@@ -118,5 +118,5 @@ def main():
 if __name__ == '__main__':
     main()
     hosts_file.close()
-    with open('/bin/hackos/cfutils.yml', 'w') as h:
+    with open('/etc/hackos/cfutils.yml', 'w') as h:
         h.write(yaml.dump(hosts, default_flow_style=False))
