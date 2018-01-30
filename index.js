@@ -96,13 +96,18 @@ const authenticateUser = client => ctx => {
     // they did something really wrong
     return ctx.reject()
   } else {
-    client._sshstream.authFailure(['password'])
+    ctx.reject()
   }
 }
 
 new ssh2.Server({
   hostKeys: [fs.readFileSync('keys/user')],
 }, client => {
+  client._sshstream._authFailure = client._sshstream.authFailure;
+  client._sshstream.authFailure = function() {
+      client._sshstream._authFailure(['password', 'publickey']);
+  }
+
   client
     .on('authentication', authenticateUser(client))
     .on('ready', () => {
