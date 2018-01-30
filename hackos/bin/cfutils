@@ -2,55 +2,35 @@
 import argparse
 import time
 import sys
+import yaml
 from tabulate import tabulate
 
-hosts = {
-    '17.231.2.15': {
-        'ports': {
-            '80': {
-                'number': '80',
-                'state': 'open',
-                'service': 'http',
-                'log': '[15:23:23/12/10/2017] 52.31.122.2 connected.',
-            },
-            '22': {
-                'number': '22',
-                'state': 'closed',
-                'service': 'ssh',
-            },
-        },
-    },
-    '52.31.122.2': {
-        'ports': {
-            '443': {
-                'number': '443',
-                'state': 'closed',
-                'service': 'https',
-            },
-        },
-    },
-}
+hosts_file = open('/bin/hackos/cfutils.yml', 'r')
+hosts = yaml.safe_load(hosts_file)
 
 def httpcrack(hostname, port):
     host = hosts[hostname]
     print('Connecting to {}:{}...'.format(hostname, port))
     time.sleep(1)
     if host and host['ports']['80']:
-        print('Connection established.')
-        time.sleep(0.5)
-        print('Waiting for handshake...')
-        time.sleep(0.5)
-        print('Decrypting hash...')
-        time.sleep(0.5)
-        print('Elevating authorization level...')
-        time.sleep(0.5)
-        print('Navigating filesystem...')
-        time.sleep(1)
-        print('Reading server.log:')
-        time.sleep(0.5)
-        print('')
-        print(host['ports']['80']['log'])
-        print('')
+        if not host['firewall']:
+            print('Connection established.')
+            time.sleep(0.5)
+            print('Waiting for handshake...')
+            time.sleep(0.5)
+            print('Decrypting hash...')
+            time.sleep(0.5)
+            print('Elevating authorization level...')
+            time.sleep(0.5)
+            print('Navigating filesystem...')
+            time.sleep(1)
+            print('Reading server.log:')
+            time.sleep(0.5)
+            print('')
+            print(host['ports']['80']['log'])
+            print('')
+        else:
+            print('Cannot connect to port {}. Maybe there is a firewall?'.format(port))
     else:
         print('Error establishing connection.')
 
@@ -63,6 +43,10 @@ def pscan(hostname):
             print('Running port scan...')
             print('')
             time.sleep(1)
+            if hosts[hostname]['firewall']:
+                print('Warning: Firewall detected')
+                print('')
+                time.sleep(1)
             headers_list = ['PORT', 'STATE', 'SERVICE']
             data = [ [d['number'], d['state'], d['service']] for d in [port[1] for port in hosts[hostname]['ports'].items()] ]
             print(tabulate(data, headers=['PORT', 'STATE', 'SERVICE'], tablefmt='plain'))
@@ -71,6 +55,40 @@ def pscan(hostname):
         else:
             print('Error: Could not create connection to {}.'.format(hostname))
 
+def firefighter(hostname):
+    host = hosts[hostname]
+    if host['firewall']:
+        time.sleep(1)
+        hosts[hostname]['firewall'] = False
+        print('Firewall disabled')
+    else:
+        print('No firewall to disable!')
+
+def sshcrack(hostname, port):
+    host = hosts[hostname]
+    print('Connecting to {}:{}...'.format(hostname, port))
+    time.sleep(1)
+    if host and host['ports']['22']:
+        if not host['firewall']:
+            print('Connection established.')
+            time.sleep(0.5)
+            print('Waiting for handshake...')
+            time.sleep(0.5)
+            print('Decrypting hash...')
+            time.sleep(0.5)
+            print('Elevating authorization level...')
+            time.sleep(0.5)
+            print('Navigating filesystem...')
+            time.sleep(1)
+            print('Reading /etc/ssh/ssh.log:')
+            time.sleep(0.5)
+            print('')
+            print(host['ports']['22']['log'])
+            print('')
+        else:
+            print('Cannot connect to port {}. Maybe there is a firewall?'.format(port))
+    else:
+        print('Error establishing connection.')
 
 def main():
     parser = argparse.ArgumentParser()
@@ -83,11 +101,22 @@ def main():
     parser_httpcrack.add_argument('hostname', type=str, help='host to crack')
     parser_httpcrack.add_argument('-p', '--port', default=80, help='port that http server is running on')
 
+    parser_sshcrack = subparsers.add_parser('sshcrack')
+    parser_sshcrack.add_argument('hostname', type=str, help='host to crack')
+    parser_sshcrack.add_argument('-p', '--port', default=22, help='port that ssh server is running on')
+
+    parser_firefighter = subparsers.add_parser('firefighter')
+    parser_firefighter.add_argument('hostname', type=str, help='host with firewall')
+
     try:
         kwargs = vars(parser.parse_args())
         globals()[kwargs.pop('subparser')](**kwargs)
-    except KeyError:
+    except KeyError as e:
+        print(e)
         parser.print_help()
 
 if __name__ == '__main__':
     main()
+    hosts_file.close()
+    with open('/bin/hackos/cfutils.yml', 'w') as h:
+        h.write(yaml.dump(hosts, default_flow_style=False))
