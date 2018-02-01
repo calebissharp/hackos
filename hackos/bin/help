@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+
+print('help:')
+print('')
+print('cfutils: Your forensics toolkit. Type `cfutils -h` for more help.')
+print('cat: View the contents of a file')
+print('cd: Change the current directory')
+print('ls: List the contents of a directory')
+print('exit: Disconnect')
