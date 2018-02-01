@@ -1,0 +1,20 @@
+17.231.2.15:
+  firewall: false
+  ports:
+    '22':
+      number: '22'
+      service: ssh
+      state: closed
+    '80':
+      log: '[15:23:23/12/10/2017] 52.31.122.2 connected.'
+      number: '80'
+      service: http
+      state: open
+52.31.122.2:
+  firewall: true
+  ports:
+    '22':
+      log: hello frank
+      number: '22'
+      service: ssh
+      state: filtered

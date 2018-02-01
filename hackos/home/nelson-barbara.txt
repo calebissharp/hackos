@@ -1,0 +1,9 @@
+Name: Nelson, Barbara
+Birthday: 18/04/1931 (age 87)
+Occupation: Retired
+
+
+Report:
+On October 25, 2018, Nelson was using her computer to look at Facebook. While she was playing Candy Crush on level 2031, she received a notification stating that her computer was compromised. She clicked on said notification, leading her to a malicious website. She was told to download a file that would 'Fix her computer'. On downloading this file and running it, her computer immediately shutdown and started again, showing a traditional ransomware message. It was at this time that Nelson called the police and the Cyber Forensics Unit was dispatched. Most of Nelson's data was irrecoverable because of the advanced encryption method used, but they were able to find a trace back to the IP address, 17.231.2.15.
+
+

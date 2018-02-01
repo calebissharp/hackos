@@ -1,0 +1,5 @@
+Your name is Detective Frank Oliver of the LAPD Cyber Forensics Unit. You're currently the lead detective on a case to track down the notorious hacker Oddity.
+
+You return home one night, extra intent on finding your target. You log onto your laptop, and begin the search. You already have a lead, a Barbara Nelson, who was Oddity's most recent victim in a string of attacks. Going through her machine, you found a trace back to an IP. Now you must follow that IP all the way to the top and stop Oddity from causing anymore damage.
+
+* Hint: type `help` for a list of common commands and their uses.

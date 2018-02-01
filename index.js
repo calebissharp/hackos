@@ -11,6 +11,7 @@ const host = process.env.HOST || '0.0.0.0'
 const docker = new Docker({ socketPath: '/var/run/docker.sock' })
 
 const pubKey = ssh2.utils.genPublicKey(ssh2.utils.parseKey(fs.readFileSync('keys/user.pub')))
+const intro = fs.readFileSync('introduction.txt', { encoding: 'utf8' })
 
 const users = {}
 
@@ -20,7 +21,7 @@ const getOrCreateContainer = async (user) => {
       docker.getContainer(`hackos-${user.containerID}`)
     } else {
       const container = await docker.createContainer({
-        Image: 'ubuntu',
+        Image: 'hackos',
         AttachStdin: true,
         AttachStdout: true,
         AttachStderr: true,
@@ -30,9 +31,9 @@ const getOrCreateContainer = async (user) => {
         StdinOnce: false,
         Privileged: false,
       })
-  
+
       user.containerID = container.id
-  
+
       return container
     }
   } catch(error) {
@@ -53,10 +54,13 @@ const attachToContainer = async ({ container, socket, client, user }) => {
       console.log(`Piping socket to container... (${container.id})`)
 
       socket.write(`[server] Welcome ${user.username}\r\n\r\n`)
+
+      socket.write(intro.replace(/\n/g, '\r\n') + '\r\n\r\n')
+
       docker.modem.demuxStream(stream, socket, socket)
-  
+
       socket.pipe(stream)
-  
+
       stream.on('end', () => {
         socket.write(`\r\n[server] Goodbye for now ${user.username}.\r\n\r\n`)
         client.end()
@@ -73,29 +77,24 @@ const attachToContainer = async ({ container, socket, client, user }) => {
 }
 
 const authenticateUser = client => ctx => {
-  if (ctx.method === 'keyboard-interactive') {
-    ctx.prompt(['username: ', 'password: '], ([username, password]) => {
-      // no username or password given
-      if (!username || !password) {
-        return ctx.reject()
+  if (ctx.method === 'password') {
+    const { username, password } = ctx
+    // account already exists
+    if (users[username] && users[username].password === password) {
+      client.username = username
+      return ctx.accept()
+    }
+    // account doesn't exist yet
+    else if (!users[username]) {
+      users[username] = {
+        username,
+        password,
       }
-      // account already exists
-      else if (users[username] && users[username].password === password) {
-        client.username = username
-        return ctx.accept()
-      }
-      // account doesn't exist yet
-      else if (!users[username]) {
-        users[username] = {
-          username,
-          password,
-        }
-        client.username = username
-        return ctx.accept()
-      }
-      // they did something really wrong
-      return ctx.reject()
-    })
+      client.username = username
+      return ctx.accept()
+    }
+    // they did something really wrong
+    return ctx.reject()
   } else {
     ctx.reject()
   }
@@ -104,6 +103,11 @@ const authenticateUser = client => ctx => {
 new ssh2.Server({
   hostKeys: [fs.readFileSync('keys/user')],
 }, client => {
+  client._sshstream._authFailure = client._sshstream.authFailure;
+  client._sshstream.authFailure = function() {
+      client._sshstream._authFailure(['password', 'publickey']);
+  }
+
   client
     .on('authentication', authenticateUser(client))
     .on('ready', () => {
@@ -121,7 +125,7 @@ new ssh2.Server({
           const container = await getOrCreateContainer(user)
 
           console.log('Starting container...')
-          container.start()
+          await container.start()
 
           console.log('Attaching container...')
           await attachToContainer({ container, socket, client, user })
