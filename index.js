@@ -17,7 +17,7 @@ const users = {}
 const getOrCreateContainer = async (user) => {
   try {
     if (user.containerID) {
-      docker.getContainer(`hackos-${user.containerID}`)
+      return docker.getContainer(`${user.containerID}`)
     } else {
       const container = await docker.createContainer({
         Image: 'ubuntu',
@@ -30,9 +30,9 @@ const getOrCreateContainer = async (user) => {
         StdinOnce: false,
         Privileged: false,
       })
-  
+
       user.containerID = container.id
-  
+
       return container
     }
   } catch(error) {
@@ -54,9 +54,9 @@ const attachToContainer = async ({ container, socket, client, user }) => {
 
       socket.write(`[server] Welcome ${user.username}\r\n\r\n`)
       docker.modem.demuxStream(stream, socket, socket)
-  
+
       socket.pipe(stream)
-  
+
       stream.on('end', () => {
         socket.write(`\r\n[server] Goodbye for now ${user.username}.\r\n\r\n`)
         client.end()
